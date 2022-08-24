@@ -2,23 +2,17 @@ module Main (main) where
 
 import Brick (Widget, continue, continueWithoutRedraw, halt)
 import qualified Brick.AttrMap as A
-import qualified Brick.Focus as F
 import qualified Brick.Main as M
 import qualified Brick.Types as T
 import Brick.Util (fg, on)
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core (hBox, hLimit, str, vBox, vLimit, viewport, withAttr, (<+>))
+import Brick.Widgets.Core (hLimit, str, vBox, vLimit, withAttr, (<+>))
 import qualified Brick.Widgets.Edit as E
 import qualified Brick.Widgets.List as L
-import Control.Monad (void)
-import Control.Monad.State (modify)
 import Data.Text (unpack)
 import qualified Data.Vector as Vec
 import qualified Graphics.Vty as V
-import Lens.Micro ((^.))
-import Lens.Micro.Mtl
-import Lib (printTask, readTask, writeTask)
 import RIO hiding (on)
 
 main :: IO ()
@@ -51,8 +45,8 @@ appDraw (TheState {theList = l, theEditor = TheEditorState {theEditorWidget = w,
       C.vCenter . C.hCenter . hLimit 80 . vBox $
         [ box,
           vBox $ [edit | s] ++ [str " "],
-          C.hCenter $ str "Press +/=/Del to add/edit/remove list elements.",
-          C.hCenter $ str "Press Esc to cancel input if it is being entered, otherwise exit the application."
+          C.hCenter $ str $ if s then "Press Enter to finish input." else "Press +/=/Del to add/edit/remove list elements.",
+          C.hCenter $ str $ if s then "Press Esc to cancel input." else "Press Esc to exit the application."
         ]
 
 appHandleEvent :: TheState -> T.BrickEvent Name e -> T.EventM Name (T.Next TheState)
