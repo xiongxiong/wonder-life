@@ -7,9 +7,12 @@ module Data.Basic
     createTask,
     removeTask,
     Task(..),
+    TaskStatus(..),
     newTask,
     doneTask,
-    undoneTask
+    undoneTask,
+    taskIsDone,
+    taskIsTodo
 ) where
 
 import RIO
@@ -41,7 +44,7 @@ data Task = Task {
     createAt :: UTCTime, -- 创建时间
     updateAt :: UTCTime, -- 更新时间
     subTasks :: [Task] -- 子任务
-} deriving (Generic, Show)
+} deriving (Generic, Show, Eq)
 
 instance FromJSON Task
 
@@ -71,9 +74,18 @@ doneTask task = getCurrentTime >>= (\current -> return task{status = Done curren
 undoneTask :: Task -> IO Task
 undoneTask task = getCurrentTime >>= (\current -> return task{status = Todo, updateAt = current})
 
+-- 任务是否已办
+taskIsDone :: Task -> Bool
+taskIsDone Task{status = Done _} = True
+taskIsDone _ = False
+
+-- 任务是否待办
+taskIsTodo :: Task -> Bool
+taskIsTodo = not . taskIsDone
+
 ---------------------------------------------------------------------------------------------------
 
-data TaskStatus = Todo | Done UTCTime deriving (Generic, Show)
+data TaskStatus = Todo | Done UTCTime deriving (Generic, Show, Eq)
 
 instance FromJSON TaskStatus
 
@@ -84,7 +96,7 @@ instance ToJSON TaskStatus
 data TaskTimer = TaskTimer {
     startAt :: Maybe UTCTime,
     totalUse :: Integer
-} deriving (Generic, Show)
+} deriving (Generic, Show, Eq)
 
 instance FromJSON TaskTimer
 
