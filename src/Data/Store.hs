@@ -4,17 +4,12 @@ module Data.Store
     loadPlan
 ) where
 
+import RIO
 import Data.Basic (Plan)
 import Data.Aeson (encode, decode)
 import Data.ByteString.Lazy (readFile, writeFile)
 import RIO.Directory (doesFileExist, createDirectoryIfMissing)
-import RIO.FilePath (FilePath, takeDirectory)
-import RIO
-    ( ($),
-      Monad(return),
-      Bool(True),
-      Maybe(Nothing),
-      IO, (<&>) )
+import RIO.FilePath (takeDirectory)
 
 savePlan :: Plan -> FilePath -> IO ()
 savePlan plan filepath = do

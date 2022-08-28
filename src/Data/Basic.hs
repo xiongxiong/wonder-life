@@ -37,13 +37,13 @@ removeTask plan Task{taskId = toRemove} = filter (\Task{taskId = toCheck} -> toC
 
 data Task = Task {
     taskId :: Text, -- 任务标识
-    title :: Text, -- 任务标题
-    detail :: Text, -- 任务详情
-    status :: TaskStatus, -- 任务状态
-    timer :: Maybe TaskTimer, -- 任务计时器
-    createAt :: UTCTime, -- 创建时间
-    updateAt :: UTCTime, -- 更新时间
-    subTasks :: [Task] -- 子任务
+    taskTitle :: Text, -- 任务标题
+    taskDetail :: Text, -- 任务详情
+    taskStatus :: TaskStatus, -- 任务状态
+    taskTimer :: Maybe TaskTimer, -- 任务计时器
+    taskCreateAt :: UTCTime, -- 创建时间
+    taskUpdateAt :: UTCTime, -- 更新时间
+    taskSubTasks :: [Task] -- 子任务
 } deriving (Generic, Show, Eq)
 
 instance FromJSON Task
@@ -52,31 +52,31 @@ instance ToJSON Task
 
 -- 创建任务
 newTask :: Text -> Text -> IO Task
-newTask title detail = do
+newTask taskTitle taskDetail = do
     current <- getCurrentTime
     taskId <- textUuid
     return Task{
         taskId,
-        title,
-        detail,
-        status = Todo,
-        timer = Nothing,
-        createAt = current,
-        updateAt = current,
-        subTasks = []
+        taskTitle,
+        taskDetail,
+        taskStatus = Todo,
+        taskTimer = Nothing,
+        taskCreateAt = current,
+        taskUpdateAt = current,
+        taskSubTasks = []
     }
 
 -- 完成任务
 doneTask :: Task -> IO Task
-doneTask task = getCurrentTime >>= (\current -> return task{status = Done current})
+doneTask task = getCurrentTime >>= (\current -> return task{taskStatus = Done current})
 
 -- 重置任务
 undoneTask :: Task -> IO Task
-undoneTask task = getCurrentTime >>= (\current -> return task{status = Todo, updateAt = current})
+undoneTask task = getCurrentTime >>= (\current -> return task{taskStatus = Todo, taskUpdateAt = current})
 
 -- 任务是否已办
 taskIsDone :: Task -> Bool
-taskIsDone Task{status = Done _} = True
+taskIsDone Task{taskStatus = Done _} = True
 taskIsDone _ = False
 
 -- 任务是否待办
@@ -103,3 +103,15 @@ instance FromJSON TaskTimer
 instance ToJSON TaskTimer
 
 ---------------------------------------------------------------------------------------------------
+
+data TaskPlatView = TaskPlatView {
+    taskPlatViewId :: Text, -- 任务标识
+    taskPlatViewParentId :: Maybe Text, -- 父任务标识
+    taskPlatViewTitle :: Text, -- 任务标题
+    taskPlatViewDetail :: Text, -- 任务详情
+    taskPlatViewTaskStatus :: TaskStatus, -- 任务状态
+    taskPlatViewTaskTimer :: Maybe TaskTimer, -- 任务计时器
+    taskPlatViewCreateAt :: UTCTime, -- 创建时间
+    taskPlatViewUpdateAt :: UTCTime, -- 更新时间
+    taskPlatViewsubTasks :: [Task] -- 子任务
+} deriving (Generic, Show, Eq)
