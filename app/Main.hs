@@ -67,7 +67,7 @@ appDraw
         C.vCenter . C.hCenter . vBox $
           [ box,
             vBox $ [edit | shown] ++ [str " "],
-            C.hCenter $ str $ if shown then "Press Enter to add a new todo task." else "Press +/=/Del to add/edit/remove list elements.",
+            C.hCenter $ str $ if shown then "Press Enter to finish input." else "Press +/=/Enter/Del to add/sub/edit/remove list elements.",
             if shown then emptyWidget else C.hCenter . str $ "Press _/- to switch list/task status",
             C.hCenter $ str $ if shown then "Press Esc to cancel input." else "Press Esc to exit the application."
           ]
@@ -85,13 +85,83 @@ appHandleEvent
                      },
                  theStateConfig =
                    theConfig@TheConfig
-                     { listStatus = listStatus
+                     { listStatus
                      }
                }
              )
   (T.VtyEvent e) =
-    if s
+    if not s
       then case e of
+        V.EvKey (V.KChar '_') [] -> do
+          if listStatus == TheListTodo
+            then continue theState {theStateConfig = theConfig {listStatus = TheListDone}}
+            else continue theState {theStateConfig = theConfig {listStatus = TheListTodo}}
+        V.EvKey (V.KChar '-') [] -> do
+          if listStatus == TheListTodo
+            then do
+              let sel = L.listSelectedElement listTodo
+              case sel of
+                Nothing -> continueWithoutRedraw theState
+                Just (i, task) -> do
+                  nTask <- liftIO $ doneTask task
+                  continue theState {theStateTodoList = L.listRemove i listTodo, theStateDoneList = L.listInsert 0 nTask listDone}
+            else do
+              let sel = L.listSelectedElement listDone
+              case sel of
+                Nothing -> continueWithoutRedraw theState
+                Just (i, task) -> do
+                  nTask <- liftIO $ undoneTask task
+                  continue theState {theStateTodoList = L.listInsert 0 nTask listTodo, theStateDoneList = L.listRemove i listDone}
+        V.EvKey (V.KChar '+') [] -> 
+          if listStatus == TheListTodo
+            then continue theState {theStateEditorState = edit {theEditorWidget = E.editorText Edit1 (Just 1) "", theEditorShown = True, theEditorNew = True}}
+            else continueWithoutRedraw theState
+        V.EvKey (V.KChar '=') [] ->
+          if listStatus == TheListTodo
+            then do
+              let sel = L.listSelectedElement listTodo
+              case sel of
+                Nothing -> continueWithoutRedraw theState
+                Just (_, _) -> do
+                  continue
+                    theState
+                      { theStateEditorState = edit {theEditorWidget = E.editorText Edit1 (Just 1) "", theEditorShown = True, theEditorNew = False}
+                      }
+            else continueWithoutRedraw theState
+        V.EvKey V.KDel [] -> do
+          let sel = L.listSelectedElement listTodo
+          case sel of
+            Nothing -> continueWithoutRedraw theState
+            Just (i, _) ->
+              continue
+                theState
+                  { theStateTodoList = L.listRemove i listTodo
+                  }
+        V.EvKey V.KEsc [] ->
+          if listStatus == TheListTodo
+            then do
+              homeDir <- liftIO getHomeDirectory
+              let tasks = Vec.toList . Vec.concat $ L.listElements <$> [listTodo, listDone]
+              liftIO $ savePlan tasks (homeDir </> dataPath theConfig)
+              halt theState
+            else continueWithoutRedraw theState
+        V.EvKey V.KEnter [] ->
+          if listStatus == TheListTodo
+            then do
+              let sel = L.listSelectedElement listTodo
+              case sel of
+                Nothing -> continueWithoutRedraw theState
+                Just (_, Task {taskTitle}) -> do
+                  continue
+                    theState
+                      { theStateEditorState = edit {theEditorWidget = E.editorText Edit1 (Just 1) taskTitle, theEditorShown = True, theEditorNew = False}
+                      }
+            else continueWithoutRedraw theState
+        _ -> do
+          if listStatus == TheListTodo
+            then L.handleListEvent e listTodo >>= \nList -> continue theState {theStateTodoList = nList}
+            else L.handleListEvent e listDone >>= \nList -> continue theState {theStateDoneList = nList}
+      else case e of
         V.EvKey V.KEsc [] -> continue theState {theStateEditorState = edit {theEditorShown = False}}
         V.EvKey V.KEnter [] -> do
           task <- liftIO $ newTask (mconcat $ E.getEditContents w) ""
@@ -115,55 +185,6 @@ appHandleEvent
                         }
                   }
         _ -> E.handleEditorEvent e w >>= \nEdit -> continue theState {theStateEditorState = edit {theEditorWidget = nEdit}}
-      else case e of
-        V.EvKey (V.KChar '_') [] -> do
-          if listStatus == TheListTodo
-            then continue theState {theStateConfig = theConfig {listStatus = TheListDone}}
-            else continue theState {theStateConfig = theConfig {listStatus = TheListTodo}}
-        V.EvKey (V.KChar '-') [] -> do
-          if listStatus == TheListTodo
-            then do
-              let sel = L.listSelectedElement listTodo
-              case sel of
-                Nothing -> continueWithoutRedraw theState
-                Just (i, task) -> do
-                  nTask <- liftIO $ doneTask task
-                  continue theState {theStateTodoList = L.listRemove i listTodo, theStateDoneList = L.listInsert 0 nTask listDone}
-            else do
-              let sel = L.listSelectedElement listDone
-              case sel of
-                Nothing -> continueWithoutRedraw theState
-                Just (i, task) -> do
-                  nTask <- liftIO $ undoneTask task
-                  continue theState {theStateTodoList = L.listInsert 0 nTask listTodo, theStateDoneList = L.listRemove i listDone}
-        V.EvKey (V.KChar '+') [] -> continue theState {theStateEditorState = edit {theEditorWidget = E.editorText Edit1 (Just 1) "", theEditorShown = True, theEditorNew = True}}
-        V.EvKey (V.KChar '=') [] -> do
-          let sel = L.listSelectedElement listTodo
-          case sel of
-            Nothing -> continueWithoutRedraw theState
-            Just (_, Task {taskTitle}) -> do
-              continue
-                theState
-                  { theStateEditorState = edit {theEditorWidget = E.editorText Edit1 (Just 1) taskTitle, theEditorShown = True, theEditorNew = False}
-                  }
-        V.EvKey V.KDel [] -> do
-          let sel = L.listSelectedElement listTodo
-          case sel of
-            Nothing -> continueWithoutRedraw theState
-            Just (i, _) ->
-              continue
-                theState
-                  { theStateTodoList = L.listRemove i listTodo
-                  }
-        V.EvKey V.KEsc [] -> do
-          homeDir <- liftIO getHomeDirectory
-          let tasks = Vec.toList . Vec.concat $ L.listElements <$> [listTodo, listDone]
-          liftIO $ savePlan tasks (homeDir </> dataPath theConfig)
-          halt theState
-        _ -> do
-          if listStatus == TheListTodo
-            then L.handleListEvent e listTodo >>= \nList -> continue theState {theStateTodoList = nList}
-            else L.handleListEvent e listDone >>= \nList -> continue theState {theStateDoneList = nList}
 appHandleEvent s _ = continueWithoutRedraw s
 
 appStartEvent :: TheState -> T.EventM Name TheState
@@ -182,12 +203,10 @@ appStartEvent TheState {theStateConfig} = do
       return initialState {theStateTodoList = L.list Str1 todoItems 1, theStateDoneList = L.list Str1 doneItems 1}
 
 listDrawElement :: Bool -> Task -> Widget Name
-listDrawElement sel Task {taskTitle, taskStatus} =
-  let tWidget
-        | taskStatus == Todo = txt taskTitle
-        | sel = withAttr doneListSelectedAttr . txt $ taskTitle
-        | otherwise = withAttr doneListAttr . txt $ taskTitle
-   in C.hCenter tWidget
+listDrawElement sel Task {taskTitle, taskStatus}
+  | taskStatus == Todo = txt taskTitle
+  | sel = withAttr doneListSelectedAttr . txt $ taskTitle
+  | otherwise = withAttr doneListAttr . txt $ taskTitle
 
 doneListAttr :: A.AttrName
 doneListAttr = L.listAttr <> A.attrName "done"

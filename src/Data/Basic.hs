@@ -106,12 +106,11 @@ instance ToJSON TaskTimer
 
 data TaskPlatView = TaskPlatView {
     taskPlatViewId :: Text, -- 任务标识
-    taskPlatViewParentId :: Maybe Text, -- 父任务标识
+    taskPlatViewAncestors :: [(Text, Text)], -- 祖先任务栈 [(任务ID，缩略任务标题)]
     taskPlatViewTitle :: Text, -- 任务标题
     taskPlatViewDetail :: Text, -- 任务详情
     taskPlatViewTaskStatus :: TaskStatus, -- 任务状态
     taskPlatViewTaskTimer :: Maybe TaskTimer, -- 任务计时器
     taskPlatViewCreateAt :: UTCTime, -- 创建时间
-    taskPlatViewUpdateAt :: UTCTime, -- 更新时间
-    taskPlatViewsubTasks :: [Task] -- 子任务
+    taskPlatViewUpdateAt :: UTCTime -- 更新时间
 } deriving (Generic, Show, Eq)
