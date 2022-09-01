@@ -36,12 +36,14 @@ library
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
+      RecordWildCards
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , extra
     , microlens
     , microlens-mtl
     , mtl
@@ -63,12 +65,14 @@ executable wonder-life-exe
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
+      RecordWildCards
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , extra
     , microlens
     , microlens-mtl
     , mtl
@@ -92,12 +96,14 @@ test-suite wonder-life-test
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
+      RecordWildCards
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , extra
     , microlens
     , microlens-mtl
     , mtl

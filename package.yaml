@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- extra
 - time
 - text
 - uuid
@@ -38,6 +39,7 @@ default-extensions:
 - NoImplicitPrelude
 - OverloadedStrings
 - NamedFieldPuns
+- RecordWildCards
 
 ghc-options:
 - -Wall
