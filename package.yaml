@@ -34,12 +34,25 @@ dependencies:
 - mtl
 - microlens
 - microlens-mtl
+- warp
+- servant
+- servant-server
+- persistent
+- persistent-template
+- persistent-mysql
+- esqueleto
+- monad-logger
+- transformers
+- scientific
+- katip
 
 default-extensions:
+- TemplateHaskell
 - NoImplicitPrelude
 - OverloadedStrings
 - NamedFieldPuns
 - RecordWildCards
+- QuasiQuotes
 
 ghc-options:
 - -Wall
@@ -56,9 +69,27 @@ library:
   source-dirs: src
 
 executables:
-  wonder-life-exe:
+  wonder-life-api:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         app/api
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - wonder-life
+  wonder-life-gtk:
+    main:                Main.hs
+    source-dirs:         app/gtk
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - wonder-life
+  wonder-life-terminal:
+    main:                Main.hs
+    source-dirs:         app/terminal
     ghc-options:
     - -threaded
     - -rtsopts

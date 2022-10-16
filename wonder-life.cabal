@@ -25,63 +25,181 @@ source-repository head
 
 library
   exposed-modules:
+      Api
+      Api.Basic
+      Api.Task
+      Api.User
       Data.Basic
+      Data.Reminder
       Data.Store
+      Data.Task
       Lib
   other-modules:
       Paths_wonder_life
   hs-source-dirs:
       src
   default-extensions:
+      TemplateHaskell
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
       RecordWildCards
+      QuasiQuotes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , esqueleto
     , extra
+    , katip
     , microlens
     , microlens-mtl
+    , monad-logger
     , mtl
+    , persistent
+    , persistent-mysql
+    , persistent-template
     , rio
+    , scientific
+    , servant
+    , servant-server
     , text
     , time
+    , transformers
     , uuid
     , vector
     , vty
+    , warp
   default-language: Haskell2010
 
-executable wonder-life-exe
+executable wonder-life-api
   main-is: Main.hs
   other-modules:
       Paths_wonder_life
   hs-source-dirs:
-      app
+      app/api
   default-extensions:
+      TemplateHaskell
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
       RecordWildCards
+      QuasiQuotes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , esqueleto
     , extra
+    , katip
     , microlens
     , microlens-mtl
+    , monad-logger
     , mtl
+    , persistent
+    , persistent-mysql
+    , persistent-template
     , rio
+    , scientific
+    , servant
+    , servant-server
     , text
     , time
+    , transformers
     , uuid
     , vector
     , vty
+    , warp
+    , wonder-life
+  default-language: Haskell2010
+
+executable wonder-life-gtk
+  main-is: Main.hs
+  other-modules:
+      Paths_wonder_life
+  hs-source-dirs:
+      app/gtk
+  default-extensions:
+      TemplateHaskell
+      NoImplicitPrelude
+      OverloadedStrings
+      NamedFieldPuns
+      RecordWildCards
+      QuasiQuotes
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , brick
+    , bytestring
+    , esqueleto
+    , extra
+    , katip
+    , microlens
+    , microlens-mtl
+    , monad-logger
+    , mtl
+    , persistent
+    , persistent-mysql
+    , persistent-template
+    , rio
+    , scientific
+    , servant
+    , servant-server
+    , text
+    , time
+    , transformers
+    , uuid
+    , vector
+    , vty
+    , warp
+    , wonder-life
+  default-language: Haskell2010
+
+executable wonder-life-terminal
+  main-is: Main.hs
+  other-modules:
+      Paths_wonder_life
+  hs-source-dirs:
+      app/terminal
+  default-extensions:
+      TemplateHaskell
+      NoImplicitPrelude
+      OverloadedStrings
+      NamedFieldPuns
+      RecordWildCards
+      QuasiQuotes
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , brick
+    , bytestring
+    , esqueleto
+    , extra
+    , katip
+    , microlens
+    , microlens-mtl
+    , monad-logger
+    , mtl
+    , persistent
+    , persistent-mysql
+    , persistent-template
+    , rio
+    , scientific
+    , servant
+    , servant-server
+    , text
+    , time
+    , transformers
+    , uuid
+    , vector
+    , vty
+    , warp
     , wonder-life
   default-language: Haskell2010
 
@@ -93,25 +211,38 @@ test-suite wonder-life-test
   hs-source-dirs:
       test
   default-extensions:
+      TemplateHaskell
       NoImplicitPrelude
       OverloadedStrings
       NamedFieldPuns
       RecordWildCards
+      QuasiQuotes
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson
     , base >=4.7 && <5
     , brick
     , bytestring
+    , esqueleto
     , extra
+    , katip
     , microlens
     , microlens-mtl
+    , monad-logger
     , mtl
+    , persistent
+    , persistent-mysql
+    , persistent-template
     , rio
+    , scientific
+    , servant
+    , servant-server
     , text
     , time
+    , transformers
     , uuid
     , vector
     , vty
+    , warp
     , wonder-life
   default-language: Haskell2010

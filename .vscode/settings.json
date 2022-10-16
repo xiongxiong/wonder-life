@@ -1,0 +1,11 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "wonder-life",
+            "database": "${workspaceFolder:wonder-life}/app/gtk/db.sqlite"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
+}

@@ -5,7 +5,7 @@ module Lib
     readTask
 ) where
 
-import RIO
+import RIO ( String, Maybe(Just, Nothing), IO )
 import Data.Basic (newTask, createTask)
 import Data.Store (savePlan, loadPlan)
 import System.IO (print)
@@ -27,4 +27,3 @@ readTask = do
     case plan of
         Nothing -> print ("nothing" :: String)
         (Just p) -> print p
-
