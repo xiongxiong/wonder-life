@@ -28,23 +28,16 @@ dependencies:
 - bytestring
 - aeson
 - rio
-- brick
-- vty
 - vector
 - mtl
 - microlens
 - microlens-mtl
-- warp
-- servant
-- servant-server
-- persistent
-- persistent-template
-- persistent-mysql
-- esqueleto
 - monad-logger
 - transformers
 - scientific
 - katip
+- warp
+- servant
 
 default-extensions:
 - TemplateHaskell
@@ -78,6 +71,11 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - wonder-life
+    - servant-server
+    - persistent
+    - persistent-template
+    - persistent-mysql
+    - esqueleto
   wonder-life-gtk:
     main:                Main.hs
     source-dirs:         app/gtk
@@ -87,6 +85,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - wonder-life
+    - servant-client
+    - gi-gtk
+    - haskell-gi-base
   wonder-life-terminal:
     main:                Main.hs
     source-dirs:         app/terminal
@@ -96,6 +97,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - wonder-life
+    - brick
+    - vty
 
 tests:
   wonder-life-test:

@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Api (app, migrate)
+import Server (app, migrate)
 import Control.Monad.Logger (runStdoutLoggingT)
 import Database.Persist.MySQL (ConnectInfo (connectDatabase, connectHost, connectPassword, connectPort, connectUser), defaultConnectInfo, runMigration, runSqlPersistMPool, withMySQLPool)
 import Katip (ColorStrategy (..), Severity (..), Verbosity (..), closeScribes, defaultScribeSettings, initLogEnv, mkHandleScribe, permitItem, registerScribe, runKatipContextT)
