@@ -3,7 +3,8 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Api.Task
-  ( Api,
+  ( Task (..),
+    Api,
     ParentId (..),
     ListType (..),
     ToInsert (..),
@@ -14,9 +15,37 @@ where
 import Api.Basic (ApiResult, FieldId)
 import Data.Aeson (FromJSON (..), ToJSON (..), Value (..), withObject, withScientific, withText, (.:), (.:?))
 import Data.Aeson.KeyMap (fromList)
-import Data.Scientific (toBoundedInteger, scientific)
-import RIO (Applicative (..), Bool, Either (..), Enum, Eq (..), Generic, Int64, Maybe (..), MonadFail (..), Show, Text, pure, ($), (<$>), (<|>), fromIntegral)
+import Data.Scientific (scientific, toBoundedInteger)
+import Data.Time (UTCTime)
+import RIO (Applicative (..), Bool, Either (..), Enum, Eq (..), Generic, Int64, Maybe (..), MonadFail (..), Show, Text, fromIntegral, pure, ($), (<$>), (<|>))
 import Servant.API (Capture, FromHttpApiData (..), Get, JSON, Post, ReqBody, ToHttpApiData (..), type (:<|>), type (:>))
+
+data Task = Task
+  { taskId :: Int64,
+    taskName :: Text,
+    taskDone :: Bool,
+    taskDoneAt :: Maybe UTCTime,
+    taskCreateAt :: UTCTime,
+    taskUpdateAt :: UTCTime,
+    taskDrop :: Bool
+  }
+  deriving (Eq, Show, Generic)
+
+instance FromJSON Task where
+  parseJSON = withObject "Task" $ \v -> Task <$> v .: "id" <*> v .: "taskName" <*> v .: "taskDone" <*> v .:? "taskDoneAt" <*> v .: "taskCreateAt" <*> v .: "taskUpdateAt" <*> v .: "taskDrop"
+
+instance ToJSON Task where
+  toJSON Task {taskId, taskName, taskDone, taskDoneAt, taskCreateAt, taskUpdateAt, taskDrop} =
+    Object $
+      fromList
+        [ ("id", toJSON taskId),
+          ("taskName", toJSON taskName),
+          ("taskDone", toJSON taskDone),
+          ("taskDoneAt", toJSON taskDoneAt),
+          ("taskCreateAt", toJSON taskCreateAt),
+          ("taskUpdateAt", toJSON taskUpdateAt),
+          ("taskDrop", toJSON taskDrop)
+        ]
 
 type Api =
   "tasks" :> Capture "listType" ListType :> Get '[JSON] (ApiResult [Value])

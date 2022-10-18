@@ -5,13 +5,34 @@ module Main
   )
 where
 
-import RIO (IO, Maybe (..), Bool (..))
-import Data.GI.Base ( on, AttrOp((:=)), new )
+import Api.Basic (ApiResult (..))
+import Api.Task (ListType (ListTodo), Task)
+import Client (tasks)
+import Data.Aeson (Result (..), Value, fromJSON)
+import Data.Either (Either (..))
+import Data.GI.Base (AttrOp ((:=)), new, on)
+import Data.Text (Text, pack)
+import GI.Gtk (WindowPosition (WindowPositionCenter))
 import qualified GI.Gtk as Gtk
-import GI.Gtk (WindowPosition(WindowPositionCenter))
+import Katip (ColorStrategy (..), Severity (..), Verbosity (..), closeScribes, defaultScribeSettings, initLogEnv, logTM, mkHandleScribe, permitItem, registerScribe, runKatipContextT, showLS)
+import Network.HTTP.Client (defaultManagerSettings, newManager)
+import RIO (Bool (..), Either, IO, Maybe (..), MonadReader (ask), ReaderT (..), Show (..), Traversable (sequence), bracket, liftIO, pure, stdout, ($), (.), (<$>), (=<<))
+import Servant.Client (ClientEnv, mkClientEnv, parseBaseUrl, runClientM)
 
 main :: IO ()
 main = do
+  cEnv <- clientEnv
+  handleScribe <- liftIO $ mkHandleScribe ColorIfTerminal stdout (permitItem InfoS) V2
+  let mkLogEnv = registerScribe "stdout" handleScribe defaultScribeSettings =<< initLogEnv "wonder-life-gtk" "dev"
+  bracket mkLogEnv closeScribes $ \logEnv -> do
+    runKatipContextT logEnv () "main" $ do
+      mTasks <- liftIO $ runReaderT fetchTasks cEnv
+      case mTasks of
+        Left err -> $(logTM) InfoS (showLS err)
+        Right tasks -> $(logTM) InfoS (showLS tasks)
+
+runGui :: IO ()
+runGui = do
   _ <- Gtk.init Nothing
 
   win <- new Gtk.Window [#title := "Introduction"]
@@ -56,3 +77,23 @@ main = do
   #showAll win
 
   Gtk.main
+
+clientEnv :: IO ClientEnv
+clientEnv = do
+  manager <- newManager defaultManagerSettings
+  url <- parseBaseUrl "http://localhost:8081"
+  pure $ mkClientEnv manager url
+
+fetchTasks :: ReaderT ClientEnv IO (Either Text [Task])
+fetchTasks = do
+  env <- ask
+  res <- liftIO $ runClientM (tasks ListTodo) env
+  case res of
+    Left err -> pure . Left . pack . show $ err
+    Right (ApiResultSuccess ts) -> pure . sequence $ convert <$> ts
+    Right (ApiResultFailure code msg) -> pure . Left $ msg
+  where
+    convert :: Value -> Either Text Task
+    convert json = case fromJSON json of
+      Success o -> Right o
+      Error e -> Left . pack $ e

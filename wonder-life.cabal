@@ -133,6 +133,7 @@ executable wonder-life-gtk
     , extra
     , gi-gtk
     , haskell-gi-base
+    , http-client
     , katip
     , microlens
     , microlens-mtl

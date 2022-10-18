@@ -16,7 +16,7 @@ main = do
             runMigration migrate
             backend <- ask
             handleScribe <- liftIO $ mkHandleScribe ColorIfTerminal stdout (permitItem InfoS) V2
-            let mkLogEnv = registerScribe "stdout" handleScribe defaultScribeSettings =<< initLogEnv "WonderLife" "dev"
+            let mkLogEnv = registerScribe "stdout" handleScribe defaultScribeSettings =<< initLogEnv "wonder-life-api" "dev"
             liftIO . bracket mkLogEnv closeScribes $ \logEnv -> do
               join . runKatipContextT logEnv () "main" . runReaderT (run 8081 <$> app) $ backend
         )

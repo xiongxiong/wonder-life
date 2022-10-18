@@ -85,6 +85,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - wonder-life
+    - http-client
     - servant-client
     - gi-gtk
     - haskell-gi-base
