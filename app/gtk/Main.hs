@@ -1,37 +1,50 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main
   ( main,
   )
 where
 
-import Api.Basic (ApiResult (..))
-import Api.Task (ListType (ListTodo), Task)
-import Client (tasks)
-import Data.Aeson (Result (..), Value, fromJSON)
+import Api.Task (ListType (ListTodo), Task (taskName), ToInsert (ToInsert))
+import qualified Client as Cli
+import Control.Monad.State (MonadState (..), StateT (runStateT))
 import Data.Either (Either (..))
 import Data.GI.Base (AttrOp ((:=)), new, on)
-import Data.Text (Text, pack)
-import GI.Gtk (WindowPosition (WindowPositionCenter))
+import Data.Vector (empty, fromList, indexed)
+import GI.Gtk (Justification (JustificationLeft))
 import qualified GI.Gtk as Gtk
-import Katip (ColorStrategy (..), Severity (..), Verbosity (..), closeScribes, defaultScribeSettings, initLogEnv, logTM, mkHandleScribe, permitItem, registerScribe, runKatipContextT, showLS)
+import Katip (ColorStrategy (..), LogEnv, Severity (..), Verbosity (..), closeScribes, defaultScribeSettings, initLogEnv, logTM, mkHandleScribe, permitItem, registerScribe, runKatipContextT, showLS)
 import Network.HTTP.Client (defaultManagerSettings, newManager)
-import RIO (Bool (..), Either, IO, Maybe (..), MonadReader (ask), ReaderT (..), Show (..), Traversable (sequence), bracket, liftIO, pure, stdout, ($), (.), (<$>), (=<<))
-import Servant.Client (ClientEnv, mkClientEnv, parseBaseUrl, runClientM)
+import RIO (Bool (..), IO, Maybe (..), ReaderT (..), Traversable (sequence), Vector, bracket, flip, fromIntegral, liftIO, pure, stdout, void, ($), (.), (<$>), (=<<), (>>))
+import Servant.Client (ClientEnv, mkClientEnv, parseBaseUrl)
 
 main :: IO ()
 main = do
-  cEnv <- clientEnv
-  handleScribe <- liftIO $ mkHandleScribe ColorIfTerminal stdout (permitItem InfoS) V2
-  let mkLogEnv = registerScribe "stdout" handleScribe defaultScribeSettings =<< initLogEnv "wonder-life-gtk" "dev"
-  bracket mkLogEnv closeScribes $ \logEnv -> do
-    runKatipContextT logEnv () "main" $ do
-      mTasks <- liftIO $ runReaderT fetchTasks cEnv
-      case mTasks of
-        Left err -> $(logTM) InfoS (showLS err)
-        Right tasks -> $(logTM) InfoS (showLS tasks)
+  void . flip runStateT initStore $ do
+    fetchTasks
+    runGui
 
-runGui :: IO ()
+type Store = Vector Task
+
+initStore :: Store
+initStore = empty
+
+type MainState = StateT Store IO ()
+
+fetchTasks :: MainState
+fetchTasks = do
+  cEnv <- liftIO clientEnv
+  mTasks <- liftIO . bracket mkLogEnv closeScribes $ \logEnv -> do
+    runKatipContextT logEnv () "main" $ do
+      mTasks <- liftIO $ runReaderT (Cli.tasks ListTodo) cEnv
+      case mTasks of
+        Left err -> $(logTM) InfoS (showLS err) >> pure []
+        Right ts -> $(logTM) InfoS (showLS ts) >> pure ts
+  put . fromList $ mTasks
+
+runGui :: MainState
 runGui = do
   _ <- Gtk.init Nothing
 
@@ -58,42 +71,43 @@ runGui = do
 
   listBox <- new Gtk.ListBox []
   #packStart ctr listBox True True 0
+  loadTasks listBox
 
   ctrFoot <- new Gtk.Box [#orientation := Gtk.OrientationHorizontal]
   #packStart ctr ctrFoot False False 0
 
-  entry <- new Gtk.Entry []
+  entry <- new Gtk.Entry [#activatesDefault := True, #placeholderText := "New Task"]
   #packStart ctrFoot entry True True 10
-
-  -- msg <- new Gtk.Label [#label := "Hello"]
-  -- #packStart container msg True False 10
-
-  -- btn <- new Gtk.Button [#label := "Click me!"]
-  -- _ <- on btn #clicked (set msg [#label := "Clicked!"])
-  -- #packStart container btn False False 10
+  _ <- on entry #activate $ do
+    buffer <- Gtk.getEntryBuffer entry
+    name <- #getText buffer
+    cEnv <- clientEnv
+    _ <- flip runReaderT cEnv . Cli.newTask $ ToInsert Nothing name
+    #setText buffer "" 0
 
   #resize win 640 480
-  #setPosition win WindowPositionCenter
+  #setPosition win Gtk.WindowPositionCenter
   #showAll win
 
   Gtk.main
+
+loadTasks :: Gtk.ListBox -> MainState
+loadTasks listBox = do
+  ts <- get
+  void . sequence $
+    ( \(idx, task) -> do
+        w <- Gtk.toWidget =<< new Gtk.Label [#label := taskName task, #singleLineMode := True, #justify := JustificationLeft, #halign := Gtk.AlignFill, #xalign := 0, #margin := 8]
+        #insert listBox w (fromIntegral idx)
+    )
+      <$> indexed ts
+
+mkLogEnv :: IO LogEnv
+mkLogEnv = do
+  handleScribe <- liftIO $ mkHandleScribe ColorIfTerminal stdout (permitItem InfoS) V2
+  registerScribe "stdout" handleScribe defaultScribeSettings =<< initLogEnv "wonder-life-gtk" "dev"
 
 clientEnv :: IO ClientEnv
 clientEnv = do
   manager <- newManager defaultManagerSettings
   url <- parseBaseUrl "http://localhost:8081"
   pure $ mkClientEnv manager url
-
-fetchTasks :: ReaderT ClientEnv IO (Either Text [Task])
-fetchTasks = do
-  env <- ask
-  res <- liftIO $ runClientM (tasks ListTodo) env
-  case res of
-    Left err -> pure . Left . pack . show $ err
-    Right (ApiResultSuccess ts) -> pure . sequence $ convert <$> ts
-    Right (ApiResultFailure code msg) -> pure . Left $ msg
-  where
-    convert :: Value -> Either Text Task
-    convert json = case fromJSON json of
-      Success o -> Right o
-      Error e -> Left . pack $ e
